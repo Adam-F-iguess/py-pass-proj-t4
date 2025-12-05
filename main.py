@@ -108,7 +108,7 @@ def main():
 			return None
 		menu_w, menu_h = 640, 480
 		menu_surf = pygame.display.set_mode((menu_w, menu_h))
-		pygame.display.set_caption("Select song to play")
+		pygame.display.set_caption("The World's Wors Video Player")
 		menu_clock = pygame.time.Clock()
 		font = pygame.font.SysFont(None, 28)
 		sel = 0
@@ -173,7 +173,7 @@ def main():
 		print("Sample frames:", ", ".join(frame_files[:3]))
 
 	screen = pygame.display.set_mode((w, h))
-	pygame.display.set_caption("Pygame Paint + Frame Renderer")
+	pygame.display.set_caption("The World's Wors Video Player")
 	clock = pygame.time.Clock()
 
 	fps = max(1, args.fps)
