@@ -73,7 +73,7 @@ def save_combined(frame_surf, overlay_surf, path):
 
 
 def main():
-	parser = argparse.ArgumentParser(description="Pygame paint + frame renderer (no audio)")
+	parser = argparse.ArgumentParser(description="The World's Wors Video Player")
 	parser.add_argument("--fps", type=int, default=DEFAULT_FPS, help="Playback FPS")
 	parser.add_argument("--frames", default=ASSET_FRAMES_DIR, help="Frames directory")
 	parser.add_argument("--audio", default=ASSET_AUDIO_PATH, help="Path to audio file to play (optional)")
