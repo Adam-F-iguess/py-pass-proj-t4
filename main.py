@@ -73,7 +73,7 @@ def save_combined(frame_surf, overlay_surf, path):
 
 
 def main():
-	parser = argparse.ArgumentParser(description="The World's Wors Video Player")
+	parser = argparse.ArgumentParser(description="The World's Worst Video Player")
 	parser.add_argument("--fps", type=int, default=DEFAULT_FPS, help="Playback FPS")
 	parser.add_argument("--frames", default=ASSET_FRAMES_DIR, help="Frames directory")
 	parser.add_argument("--audio", default=ASSET_AUDIO_PATH, help="Path to audio file to play (optional)")
@@ -108,7 +108,7 @@ def main():
 			return None
 		menu_w, menu_h = 640, 480
 		menu_surf = pygame.display.set_mode((menu_w, menu_h))
-		pygame.display.set_caption("The World's Wors Video Player")
+		pygame.display.set_caption("The World's Worst Video Player")
 		menu_clock = pygame.time.Clock()
 		font = pygame.font.SysFont(None, 28)
 		sel = 0
@@ -173,7 +173,7 @@ def main():
 		print("Sample frames:", ", ".join(frame_files[:3]))
 
 	screen = pygame.display.set_mode((w, h))
-	pygame.display.set_caption("The World's Wors Video Player")
+	pygame.display.set_caption("The World's Worst Video Player")
 	clock = pygame.time.Clock()
 
 	fps = max(1, args.fps)
