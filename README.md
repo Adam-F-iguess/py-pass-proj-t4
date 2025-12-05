@@ -12,6 +12,8 @@ Important copyright note
 Where to put files
 - Frames: `assets/frames/` — supported formats: PNG/JPG/JPEG/BMP. Name frames so they sort in playback order (e.g., `00001.png`, `00002.png`, ...).
 - Audio: `assets/audio.mp3` (default), or pass `--audio <path>` when running. OGG works best for seeking on many platforms; MP3 seeking can be inconsistent across backends.
+ - Audio: `assets/audio.mp3` (default), or place songs in `assets/music/` and accompanying frames in `assets/videos/<song-name>/`.
+	 The player will show a selection screen at startup when tracks are present in `assets/music/`.
 - Output: `assets/output/` (created automatically) — saved combined frames will appear here when you press `s`.
 
 How to run

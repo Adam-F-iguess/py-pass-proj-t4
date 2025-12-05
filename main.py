@@ -80,9 +80,78 @@ def main():
 	parser.add_argument("--no-audio", action="store_true", help="Do not load or play audio even if present")
 	args = parser.parse_args()
 
-	frame_files = find_frame_files(args.frames)
+	# Ensure music/videos dirs exist for user to drop files
+	os.makedirs(os.path.join("assets", "music"), exist_ok=True)
+	os.makedirs(os.path.join("assets", "videos"), exist_ok=True)
 
+	# Initialize pygame early so we can show a selection menu
 	pygame.init()
+
+	# Helper: scan assets/music for available audio tracks and map to video folders
+	def scan_music_tracks():
+		music_dir = os.path.join("assets", "music")
+		exts = ["*.mp3", "*.ogg", "*.wav"]
+		tracks = []
+		for e in exts:
+			for p in glob.glob(os.path.join(music_dir, e)):
+				name = os.path.splitext(os.path.basename(p))[0]
+				# associated video frames dir is assets/videos/<name>/
+				video_dir = os.path.join("assets", "videos", name)
+				has_video = os.path.isdir(video_dir) and len(find_frame_files(video_dir)) > 0
+				tracks.append((p, name, has_video, video_dir))
+		return sorted(tracks, key=lambda x: x[1].lower())
+
+	# If there are tracks in assets/music, show a simple selector before playback
+	def select_track_menu():
+		tracks = scan_music_tracks()
+		if not tracks:
+			return None
+		menu_w, menu_h = 640, 480
+		menu_surf = pygame.display.set_mode((menu_w, menu_h))
+		pygame.display.set_caption("Select song to play")
+		menu_clock = pygame.time.Clock()
+		font = pygame.font.SysFont(None, 28)
+		sel = 0
+		running = True
+		while running:
+			menu_surf.fill((20, 20, 20))
+			title = font.render("Select a song (Up/Down, Enter to play, Esc to quit)", True, (240, 240, 240))
+			menu_surf.blit(title, (12, 12))
+			y = 56
+			for i, (path, name, has_video, video_dir) in enumerate(tracks):
+				label = f"{name}  {'[video]' if has_video else ''}"
+				color = (255, 255, 0) if i == sel else (200, 200, 200)
+				txt = font.render(label, True, color)
+				menu_surf.blit(txt, (24, y))
+				y += 36
+			pygame.display.flip()
+			for ev in pygame.event.get():
+				if ev.type == pygame.QUIT:
+					return None
+				if ev.type == pygame.KEYDOWN:
+					if ev.key == pygame.K_ESCAPE:
+						return None
+					elif ev.key == pygame.K_UP:
+						sel = max(0, sel - 1)
+					elif ev.key == pygame.K_DOWN:
+						sel = min(len(tracks) - 1, sel + 1)
+					elif ev.key == pygame.K_RETURN or ev.key == pygame.K_KP_ENTER:
+						return tracks[sel]
+			menu_clock.tick(30)
+
+	# Present selection menu if songs exist
+	sel = select_track_menu()
+
+	# Decide frames directory and audio path depending on selection
+	if sel is None:
+		frames_dir = args.frames
+		audio_path = args.audio
+	else:
+		audio_path = sel[0]
+		# use associated video folder if it has frames, otherwise default frames dir
+		frames_dir = sel[3] if sel[2] else args.frames
+
+	frame_files = find_frame_files(frames_dir)
 
 	# Determine window size from first frame or default
 	if frame_files:
@@ -110,8 +179,12 @@ def main():
 	fps = max(1, args.fps)
 
 	# Audio setup
-	audio_path = args.audio
+	# Keep any audio path chosen from the selection menu; fall back to args.audio
+	if not sel:
+		audio_path = args.audio
+	# audio_enabled is true if audio not disabled and the file exists
 	audio_enabled = (not args.no_audio) and os.path.isfile(audio_path)
+	print(f"Audio path in use: {audio_path}  enabled={audio_enabled}")
 	audio_started = False
 	audio_paused_at = None
 	audio_pause_acc = 0.0
@@ -130,6 +203,9 @@ def main():
 
 	brush_color = (255, 255, 255, 255)
 	brush_radius = 6
+	# audio volume (0.0 - 1.0)
+	volume = 1.0
+	muted = False
 
 	playing = False
 	frame_index = 0
@@ -250,6 +326,30 @@ def main():
 					brush_radius = min(200, brush_radius + 1)
 				elif ev.key == pygame.K_MINUS or ev.key == pygame.K_UNDERSCORE:
 					brush_radius = max(1, brush_radius - 1)
+				elif ev.key == pygame.K_COMMA:
+					# volume down
+					volume = max(0.0, volume - 0.1)
+					if audio_enabled and audio_started:
+						try:
+							pygame.mixer.music.set_volume(0.0 if muted else volume)
+						except Exception:
+							pass
+				elif ev.key == pygame.K_PERIOD:
+					# volume up
+					volume = min(1.0, volume + 0.1)
+					if audio_enabled and audio_started:
+						try:
+							pygame.mixer.music.set_volume(0.0 if muted else volume)
+						except Exception:
+							pass
+				elif ev.key == pygame.K_m:
+					# mute toggle
+					muted = not muted
+					if audio_enabled and audio_started:
+						try:
+							pygame.mixer.music.set_volume(0.0 if muted else volume)
+						except Exception:
+							pass
 			elif ev.type == pygame.MOUSEBUTTONDOWN:
 				if ev.button == 1:
 					drawing = True
@@ -306,7 +406,7 @@ def main():
 		screen.blit(overlay, (0, 0))
 
 		# HUD with semi-transparent background for readability
-		info = f"Frame {frame_index+1}/{max(1,len(frame_files))}  FPS={fps}  Brush={brush_radius}  Playing={'Yes' if playing else 'No'}"
+		info = f"Frame {frame_index+1}/{max(1,len(frame_files))}  FPS={fps}  Brush={brush_radius}  Vol={'M' if muted else f'{volume:.2f}'}  Playing={'Yes' if playing else 'No'}"
 		txt = font.render(info, True, (255, 255, 255))
 		# draw translucent boxes behind text
 		box = pygame.Surface((max(300, txt.get_width()+16), txt.get_height()+8), pygame.SRCALPHA)
